@@ -1,0 +1,7 @@
+{
+  "name": "EcoRide - AI Carpooling",
+  "description": "A smart carpooling application connecting drivers and passengers with AI-powered route insights and matchmaking.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

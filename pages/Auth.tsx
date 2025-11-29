@@ -1,0 +1,126 @@
+
+import React, { useState } from 'react';
+import { Button } from '../components/Button';
+import { backend } from '../services/mockBackend';
+import { User } from '../types';
+import { Car, Smartphone, ArrowRight, ShieldCheck } from 'lucide-react';
+
+interface AuthProps {
+  onLogin: (user: User) => void;
+}
+
+export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+  const [step, setStep] = useState<'phone' | 'otp' | 'profile'>('phone');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSendOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (phone.length < 10) {
+        alert("Please enter a valid 10-digit mobile number");
+        return;
+    }
+    setLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+        setLoading(false);
+        setStep('otp');
+    }, 1000);
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+        // Simulate verify
+        const user = await backend.login(phone);
+        onLogin(user);
+    } catch (e) {
+        alert("Login failed");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
+           <div className="bg-green-600 p-8 text-center">
+               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                   <Car className="w-8 h-8 text-green-600" />
+               </div>
+               <h1 className="text-2xl font-bold text-white">EcoRide</h1>
+               <p className="text-green-100 text-sm mt-1">India's Trusted Corporate Carpool</p>
+           </div>
+           
+           <div className="p-8">
+               {step === 'phone' && (
+                   <form onSubmit={handleSendOtp} className="space-y-6">
+                       <div className="text-center">
+                           <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
+                           <p className="text-gray-500 text-sm mt-1">Enter your mobile number to continue</p>
+                       </div>
+                       
+                       <div className="relative">
+                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                               <Smartphone className="h-5 w-5 text-gray-400" />
+                           </div>
+                           <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
+                               <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
+                           </div>
+                           <input 
+                               type="tel"
+                               className="block w-full pl-24 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500"
+                               placeholder="99999 99999"
+                               value={phone}
+                               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                               autoFocus
+                           />
+                       </div>
+
+                       <Button type="submit" className="w-full h-12 rounded-xl" isLoading={loading}>
+                           Next <ArrowRight className="ml-2 h-4 w-4" />
+                       </Button>
+
+                       <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+                           <ShieldCheck className="h-4 w-4" />
+                           <span>100% Secure & Verified Community</span>
+                       </div>
+                   </form>
+               )}
+
+               {step === 'otp' && (
+                   <form onSubmit={handleVerifyOtp} className="space-y-6">
+                       <div className="text-center">
+                           <h2 className="text-xl font-semibold text-gray-900">Verify OTP</h2>
+                           <p className="text-gray-500 text-sm mt-1">Sent to +91 {phone} <button type='button' onClick={() => setStep('phone')} className="text-green-600 font-medium">Edit</button></p>
+                       </div>
+                       
+                       <div className="flex justify-center gap-2">
+                           <input 
+                               type="text"
+                               className="block w-full text-center py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 tracking-widest text-2xl font-bold"
+                               placeholder="1234"
+                               maxLength={4}
+                               value={otp}
+                               onChange={(e) => setOtp(e.target.value)}
+                               autoFocus
+                           />
+                       </div>
+
+                       <Button type="submit" className="w-full h-12 rounded-xl" isLoading={loading}>
+                           Verify & Login
+                       </Button>
+                       
+                       <div className="text-center text-sm">
+                           <span className="text-gray-500">Didn't receive code? </span>
+                           <button type="button" className="text-green-600 font-medium hover:underline">Resend</button>
+                       </div>
+                   </form>
+               )}
+           </div>
+       </div>
+    </div>
+  );
+};
