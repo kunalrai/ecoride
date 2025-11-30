@@ -5,7 +5,12 @@ import * as matchingService from '../services/matchingService';
 
 export const searchRides = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const rides = await matchingService.searchRides(req.user!.userId, req.body);
+    // Convert departureTime string to Date object
+    const searchParams = {
+      ...req.body,
+      departureTime: new Date(req.body.departureTime),
+    };
+    const rides = await matchingService.searchRides(req.user!.userId, searchParams);
     res.status(200).json(rides);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
