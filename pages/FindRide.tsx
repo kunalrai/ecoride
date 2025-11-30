@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Ride } from '../types';
-import { backend } from '../services/mockBackend';
+import { backend } from '../services/backendService';
 import { Button } from '../components/Button';
 import { LocationSearch } from '../components/LocationSearch';
 import { Star, Building2, Car } from 'lucide-react';
@@ -14,8 +14,22 @@ interface FindRideProps {
 export const FindRide: React.FC<FindRideProps> = ({ onNavigate, onSelectRide }) => {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+
+  const loadCurrentLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      const coords = await backend.getCurrentLocation();
+      const address = await backend.getAddressFromCoords(coords.lat, coords.lng);
+      setOrigin(address);
+    } catch (error) {
+      console.error('Failed to get current location:', error);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -29,6 +43,7 @@ export const FindRide: React.FC<FindRideProps> = ({ onNavigate, onSelectRide }) 
   };
 
   useEffect(() => {
+    loadCurrentLocation();
     handleSearch();
   }, []);
 
@@ -38,10 +53,10 @@ export const FindRide: React.FC<FindRideProps> = ({ onNavigate, onSelectRide }) 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4 shrink-0 z-20 relative">
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
-                 <LocationSearch 
-                    placeholder="From" 
-                    value={origin} 
-                    onChange={setOrigin} 
+                 <LocationSearch
+                    placeholder={loadingLocation ? "Detecting location..." : "From"}
+                    value={origin}
+                    onChange={setOrigin}
                     color="green"
                  />
             </div>

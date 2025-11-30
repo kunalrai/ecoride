@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Search, X, Map as MapIcon, ChevronRight } from 'lucide-react';
-import { searchPlaces, getCurrentLocation, getAddressFromCoords } from '../services/locationService';
+import { backend } from '../services/backendService';
 
 interface LocationSearchProps {
   placeholder: string;
@@ -39,9 +39,9 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ placeholder, val
   const handleSearchChange = async (text: string) => {
     setQuery(text);
     onChange(text); // Update parent immediately
-    
+
     if (text.length > 1) {
-        const results = await searchPlaces(text);
+        const results = await backend.searchPlaces(text);
         setSuggestions(results);
         setShowSuggestions(true);
     } else {
@@ -59,8 +59,8 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ placeholder, val
   const handleUseCurrentLocation = async () => {
     setLoading(true);
     try {
-      const coords = await getCurrentLocation();
-      const address = await getAddressFromCoords(coords.lat, coords.lng);
+      const coords = await backend.getCurrentLocation();
+      const address = await backend.getAddressFromCoords(coords.lat, coords.lng);
       setQuery(address);
       onChange(address);
     } catch {

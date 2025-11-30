@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
-import { backend } from '../services/mockBackend';
-import { generateRideDescription } from '../services/geminiService';
+import React, { useState, useEffect } from 'react';
+import { backend } from '../services/backendService';
 import { Button } from '../components/Button';
 import { LocationSearch } from '../components/LocationSearch';
 import { Users, Sparkles, Repeat, Car } from 'lucide-react';
@@ -13,7 +12,8 @@ interface OfferRideProps {
 export const OfferRide: React.FC<OfferRideProps> = ({ onNavigate }) => {
   const [loading, setLoading] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
-  
+  const [loadingLocation, setLoadingLocation] = useState(false);
+
   const [formData, setFormData] = useState({
     origin: '',
     destination: '',
@@ -26,10 +26,27 @@ export const OfferRide: React.FC<OfferRideProps> = ({ onNavigate }) => {
     vehicle: 'Honda City (KA-01-AB-1234)'
   });
 
+  const loadCurrentLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      const coords = await backend.getCurrentLocation();
+      const address = await backend.getAddressFromCoords(coords.lat, coords.lng);
+      setFormData(prev => ({ ...prev, origin: address }));
+    } catch (error) {
+      console.error('Failed to get current location:', error);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCurrentLocation();
+  }, []);
+
   const handleGenerateDescription = async () => {
     setGeneratingAi(true);
     try {
-      const desc = await generateRideDescription(formData.origin, formData.destination, formData.date);
+      const desc = await backend.generateRideDescription(formData.origin, formData.destination, formData.date);
       setFormData(prev => ({ ...prev, description: desc }));
     } finally {
       setGeneratingAi(false);
@@ -78,8 +95,8 @@ export const OfferRide: React.FC<OfferRideProps> = ({ onNavigate }) => {
                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                  </div>
                  <div className="flex-1 space-y-4">
-                     <LocationSearch 
-                        placeholder="Start Location"
+                     <LocationSearch
+                        placeholder={loadingLocation ? "Detecting location..." : "Start Location"}
                         value={formData.origin}
                         onChange={(val) => setFormData({...formData, origin: val})}
                         color="green"

@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Ride, ChatMessage } from '../types';
-import { backend } from '../services/mockBackend';
-import { getRouteInsights, askAiAssistant } from '../services/geminiService';
+import { backend } from '../services/backendService';
 import { Button } from '../components/Button';
 import { Navigation, MessageSquare, Send, Phone, Shield, Star, Share2, Building2, Car } from 'lucide-react';
 
@@ -19,7 +18,7 @@ export const RideDetails: React.FC<RideDetailsProps> = ({ ride, onBack }) => {
   const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
-    getRouteInsights(ride.origin, ride.destination).then(setAiInsights);
+    backend.getRouteInsights(ride.origin, ride.destination).then(setAiInsights);
   }, [ride]);
 
   const handleBook = async () => {
@@ -44,7 +43,7 @@ export const RideDetails: React.FC<RideDetailsProps> = ({ ride, onBack }) => {
       setMessages(prev => [...prev, {role: 'user', text: userMsg}]);
       setChatLoading(true);
       const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
-      const responseText = await askAiAssistant(history, userMsg);
+      const responseText = await backend.askAiAssistant(history, userMsg);
       setMessages(prev => [...prev, {role: 'model', text: responseText}]);
       setChatLoading(false);
   };

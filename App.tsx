@@ -7,7 +7,7 @@ import { OfferRide } from './pages/OfferRide';
 import { RideDetails } from './pages/RideDetails';
 import { Dashboard } from './pages/Dashboard';
 import { Auth } from './pages/Auth';
-import { backend } from './services/mockBackend';
+import { backend } from './services/backendService';
 import { User, Ride, UserRole } from './types';
 
 export default function App() {
