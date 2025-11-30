@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../types';
 import * as authService from '../services/authService';
 import * as vehicleService from '../services/vehicleService';
+import * as otpService from '../services/otpService';
 
 export const signup = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -132,6 +133,59 @@ export const loginWithGoogle = async (req: AuthRequest, res: Response): Promise<
     const { idToken } = req.body;
     const result = await authService.loginWithGoogle(idToken);
     res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// ============================================
+// EMAIL VERIFICATION
+// ============================================
+
+export const sendEmailVerification = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    await otpService.sendEmailOTP(email);
+    res.status(200).json({ message: 'Verification code sent to email' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const verifyEmail = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { email, otp } = req.body;
+    const isValid = await otpService.verifyOTP(email, otp, 'EMAIL');
+
+    if (!isValid) {
+      res.status(400).json({ error: 'Invalid or expired verification code' });
+      return;
+    }
+
+    // Update user's email and email verification status
+    const userId = req.user!.userId;
+    await authService.updateProfileWithVerification(userId, { email, isEmailVerified: true });
+
+    // Get updated user profile
+    const updatedUser = await authService.getUserProfile(userId);
+
+    res.status(200).json({
+      message: 'Email verified successfully',
+      user: updatedUser
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// ============================================
+// ACCOUNT MANAGEMENT
+// ============================================
+
+export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    await authService.deleteAccount(req.user!.userId);
+    res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

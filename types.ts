@@ -15,6 +15,8 @@ export interface User {
   rating: number;
   company?: string;
   isVerified?: boolean;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
 }
 
 export interface Ride {

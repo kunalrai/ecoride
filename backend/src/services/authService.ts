@@ -85,13 +85,19 @@ export const verifyLoginOTP = async (
     throw new Error('Invalid or expired OTP');
   }
 
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { phone },
   });
 
   if (!user) {
     throw new Error('User not found');
   }
+
+  // Update phone verification status on login
+  user = await prisma.user.update({
+    where: { id: user.id },
+    data: { isPhoneVerified: true },
+  });
 
   const token = generateToken({
     userId: user.id,
@@ -110,6 +116,24 @@ export const updateProfile = async (
     company?: string;
     gender?: 'MALE' | 'FEMALE' | 'OTHER';
     profilePicture?: string;
+  }
+): Promise<any> => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data,
+  });
+};
+
+export const updateProfileWithVerification = async (
+  userId: string,
+  data: {
+    name?: string;
+    email?: string;
+    company?: string;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER';
+    profilePicture?: string;
+    isEmailVerified?: boolean;
+    isPhoneVerified?: boolean;
   }
 ): Promise<any> => {
   return await prisma.user.update({
@@ -293,5 +317,88 @@ export const loginWithGoogle = async (
   } catch (error: any) {
     console.error('Google OAuth error:', error);
     throw new Error('Failed to authenticate with Google');
+  }
+};
+
+// ============================================
+// ACCOUNT MANAGEMENT
+// ============================================
+
+export const deleteAccount = async (userId: string): Promise<void> => {
+  try {
+    // Delete user's data in the following order to handle foreign key constraints
+
+    // 1. Delete bookings (as passenger)
+    await prisma.booking.deleteMany({
+      where: { passengerId: userId },
+    });
+
+    // 2. Delete bookings for user's rides (as driver)
+    const userRides = await prisma.ride.findMany({
+      where: { driverId: userId },
+      select: { id: true },
+    });
+
+    if (userRides.length > 0) {
+      await prisma.booking.deleteMany({
+        where: { rideId: { in: userRides.map(r => r.id) } },
+      });
+    }
+
+    // 3. Delete rides
+    await prisma.ride.deleteMany({
+      where: { driverId: userId },
+    });
+
+    // 4. Delete notifications
+    await prisma.notification.deleteMany({
+      where: { userId },
+    });
+
+    // 5. Delete wallet transactions
+    const userWallet = await prisma.wallet.findUnique({
+      where: { userId },
+    });
+
+    if (userWallet) {
+      await prisma.transaction.deleteMany({
+        where: { walletId: userWallet.id },
+      });
+    }
+
+    // 6. Delete wallet
+    await prisma.wallet.deleteMany({
+      where: { userId },
+    });
+
+    // 7. Delete vehicles
+    await prisma.vehicle.deleteMany({
+      where: { userId },
+    });
+
+    // 8. Delete OTP records (using identifier which stores phone/email)
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true, email: true }
+    });
+
+    if (userToDelete) {
+      const identifiers = [userToDelete.phone, userToDelete.email].filter(Boolean) as string[];
+      if (identifiers.length > 0) {
+        await prisma.oTP.deleteMany({
+          where: { identifier: { in: identifiers } },
+        });
+      }
+    }
+
+    // 9. Finally, delete the user
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    console.log(`User account ${userId} deleted successfully`);
+  } catch (error: any) {
+    console.error('Delete account error:', error);
+    throw new Error('Failed to delete account');
   }
 };

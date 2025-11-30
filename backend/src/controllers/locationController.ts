@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 import * as locationService from '../services/locationService';
+import * as nominatimService from '../services/nominatimService';
 
 export const reverseGeocode = async (
   req: AuthRequest,
@@ -123,6 +124,31 @@ export const getDirections = async (
 
     if (!result) {
       res.status(500).json({ error: 'Failed to get directions' });
+      return;
+    }
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const geocodeAddress = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { address } = req.body;
+
+    if (!address) {
+      res.status(400).json({ error: 'Address is required' });
+      return;
+    }
+
+    const result = await nominatimService.geocodeAddress(address);
+
+    if (!result) {
+      res.status(404).json({ error: 'Address not found' });
       return;
     }
 

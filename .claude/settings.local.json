@@ -16,7 +16,18 @@
       "Bash(then grep -E \"GOOGLE_MAPS_API_KEY\" backend/.env)",
       "Bash(else echo \"backend/.env file does not exist\")",
       "Bash(fi)",
-      "Bash(npx create-expo-app:*)"
+      "Bash(npx create-expo-app:*)",
+      "Bash(cat:*)",
+      "Bash(then grep -E \"GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET\" backend/.env)",
+      "Bash(npm run build:*)",
+      "Bash(if [ -f \".env\" ])",
+      "Bash(then grep -E \"SMTP_\" .env)",
+      "Bash(else echo \"No .env file found\")",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

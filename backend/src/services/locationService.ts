@@ -1,20 +1,26 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import * as nominatimService from './nominatimService';
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const USE_FREE_GEOCODING = !GOOGLE_MAPS_API_KEY || process.env.USE_FREE_GEOCODING === 'true';
 
 /**
- * Reverse geocode coordinates to address using Google Maps Geocoding API
+ * Reverse geocode coordinates to address
+ * Uses Nominatim (free) by default, falls back to Google Maps if API key is set
  */
 export const getAddressFromCoords = async (
   lat: number,
   lng: number
 ): Promise<string> => {
-  if (!GOOGLE_MAPS_API_KEY) {
-    logger.warn('GOOGLE_MAPS_API_KEY is not set. Using mock location data.');
-    return getMockAddress();
+  // Use free Nominatim service if enabled
+  if (USE_FREE_GEOCODING) {
+    logger.info('Using Nominatim for reverse geocoding (free service)');
+    const address = await nominatimService.reverseGeocode(lat, lng);
+    return address || getMockAddress();
   }
 
+  // Use Google Maps API
   try {
     const response = await axios.get(
       'https://maps.googleapis.com/maps/api/geocode/json',
@@ -33,15 +39,23 @@ export const getAddressFromCoords = async (
     }
 
     logger.warn(`Geocoding failed: ${response.data.status}`);
-    return 'Address not found';
+
+    // Fallback to Nominatim if Google fails
+    logger.info('Falling back to Nominatim');
+    const address = await nominatimService.reverseGeocode(lat, lng);
+    return address || 'Address not found';
   } catch (error) {
     logger.error('Error in getAddressFromCoords:', error);
-    return getMockAddress();
+
+    // Try Nominatim as fallback
+    const address = await nominatimService.reverseGeocode(lat, lng);
+    return address || getMockAddress();
   }
 };
 
 /**
- * Search for places using Google Places Autocomplete API
+ * Search for places
+ * Uses Nominatim (free) by default, falls back to Google Maps if API key is set
  */
 export const searchPlaces = async (
   query: string,
@@ -49,11 +63,17 @@ export const searchPlaces = async (
 ): Promise<Array<{ description: string; placeId: string }>> => {
   if (!query || query.length < 2) return [];
 
-  if (!GOOGLE_MAPS_API_KEY) {
-    logger.warn('GOOGLE_MAPS_API_KEY is not set. Using mock place data.');
-    return getMockPlaces(query);
+  // Use free Nominatim service if enabled
+  if (USE_FREE_GEOCODING) {
+    logger.info('Using Nominatim for place search (free service)');
+    const places = await nominatimService.searchPlaces(query, location);
+    return places.map(p => ({
+      description: p.description,
+      placeId: p.placeId,
+    }));
   }
 
+  // Use Google Maps API
   try {
     const params: any = {
       input: query,
@@ -80,10 +100,22 @@ export const searchPlaces = async (
     }
 
     logger.warn(`Places search failed: ${response.data.status}`);
-    return [];
+
+    // Fallback to Nominatim
+    const places = await nominatimService.searchPlaces(query, location);
+    return places.map(p => ({
+      description: p.description,
+      placeId: p.placeId,
+    }));
   } catch (error) {
     logger.error('Error in searchPlaces:', error);
-    return getMockPlaces(query);
+
+    // Try Nominatim as fallback
+    const places = await nominatimService.searchPlaces(query, location);
+    return places.map(p => ({
+      description: p.description,
+      placeId: p.placeId,
+    }));
   }
 };
 

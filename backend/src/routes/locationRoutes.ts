@@ -59,4 +59,13 @@ router.post(
   locationController.getDirections
 );
 
+router.post(
+  '/geocode',
+  authenticate,
+  validate([
+    body('address').notEmpty().withMessage('Address is required'),
+  ]),
+  locationController.geocodeAddress
+);
+
 export default router;

@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { backend } from '../services/backendService';
 import { User } from '../types';
 import { Car, Smartphone, ArrowRight, ShieldCheck } from 'lucide-react';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 interface AuthProps {
   onLogin: (user: User) => void;
@@ -135,52 +136,93 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    try {
+        const user = await backend.loginWithGoogle(credentialResponse.credential);
+        onLogin(user);
+    } catch (error: any) {
+        alert(error.message || "Google login failed");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    alert("Google login failed. Please try again.");
+  };
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
-       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
-           <div className="bg-green-600 p-8 text-center">
-               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                   <Car className="w-8 h-8 text-green-600" />
-               </div>
-               <h1 className="text-2xl font-bold text-white">EcoRide</h1>
-               <p className="text-green-100 text-sm mt-1">India's Trusted Corporate Carpool</p>
-           </div>
+    <GoogleOAuthProvider clientId={googleClientId || ''}>
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
+             <div className="bg-green-600 p-8 text-center">
+                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                     <Car className="w-8 h-8 text-green-600" />
+                 </div>
+                 <h1 className="text-2xl font-bold text-white">EcoRide</h1>
+                 <p className="text-green-100 text-sm mt-1">India's Trusted Corporate Carpool</p>
+             </div>
 
-           <div className="p-8">
-               {step === 'phone' && (
-                   <form onSubmit={handleSendOtp} className="space-y-6">
-                       <div className="text-center">
-                           <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
-                           <p className="text-gray-500 text-sm mt-1">Enter your mobile number to continue</p>
-                       </div>
+             <div className="p-8">
+                 {step === 'phone' && (
+                     <form onSubmit={handleSendOtp} className="space-y-6">
+                         <div className="text-center">
+                             <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
+                             <p className="text-gray-500 text-sm mt-1">Enter your mobile number to continue</p>
+                         </div>
 
-                       <div className="relative">
-                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                               <Smartphone className="h-5 w-5 text-gray-400" />
-                           </div>
-                           <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                               <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
-                           </div>
-                           <input
-                               type="tel"
-                               className="block w-full pl-24 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500"
-                               placeholder="99999 99999"
-                               value={phone}
-                               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                               autoFocus
-                           />
-                       </div>
+                         <div className="relative">
+                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                 <Smartphone className="h-5 w-5 text-gray-400" />
+                             </div>
+                             <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
+                                 <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
+                             </div>
+                             <input
+                                 type="tel"
+                                 className="block w-full pl-24 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500"
+                                 placeholder="99999 99999"
+                                 value={phone}
+                                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                 autoFocus
+                             />
+                         </div>
 
-                       <Button type="submit" className="w-full h-12 rounded-xl" isLoading={loading}>
-                           Next <ArrowRight className="ml-2 h-4 w-4" />
-                       </Button>
+                         <Button type="submit" className="w-full h-12 rounded-xl" isLoading={loading}>
+                             Next <ArrowRight className="ml-2 h-4 w-4" />
+                         </Button>
 
-                       <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
-                           <ShieldCheck className="h-4 w-4" />
-                           <span>100% Secure & Verified Community</span>
-                       </div>
-                   </form>
-               )}
+                         <div className="relative">
+                             <div className="absolute inset-0 flex items-center">
+                                 <div className="w-full border-t border-gray-300"></div>
+                             </div>
+                             <div className="relative flex justify-center text-sm">
+                                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                             </div>
+                         </div>
+
+                         {googleClientId && (
+                             <div className="flex justify-center w-full">
+                                 <GoogleLogin
+                                     onSuccess={handleGoogleSuccess}
+                                     onError={handleGoogleError}
+                                     theme="outline"
+                                     size="large"
+                                     text="continue_with"
+                                     shape="rectangular"
+                                 />
+                             </div>
+                         )}
+
+                         <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+                             <ShieldCheck className="h-4 w-4" />
+                             <span>100% Secure & Verified Community</span>
+                         </div>
+                     </form>
+                 )}
 
                {step === 'name' && (
                    <form onSubmit={handleSendSignupOtp} className="space-y-6">
@@ -250,6 +292,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                )}
            </div>
        </div>
-    </div>
+      </div>
+    </GoogleOAuthProvider>
   );
 };

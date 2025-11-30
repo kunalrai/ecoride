@@ -9,6 +9,45 @@ import apiService, { tokenManager } from './apiService';
 import { API_ENDPOINTS } from './apiConfig';
 import { Ride, User, Booking, UserRole } from '../types';
 
+/**
+ * Simple polyline encoder for two points
+ * Creates a valid encoded polyline from start and end coordinates
+ */
+function encodeSimplePolyline(startLat: number, startLng: number, endLat: number, endLng: number): string {
+  const encodeNumber = (num: number): string => {
+    let encoded = '';
+    let value = Math.round(num * 1e5);
+    value = value < 0 ? ~(value << 1) : value << 1;
+
+    while (value >= 0x20) {
+      encoded += String.fromCharCode((0x20 | (value & 0x1f)) + 63);
+      value >>= 5;
+    }
+    encoded += String.fromCharCode(value + 63);
+    return encoded;
+  };
+
+  const encodeCoordinate = (current: number, previous: number): string => {
+    return encodeNumber(current - previous);
+  };
+
+  let encoded = '';
+  let prevLat = 0;
+  let prevLng = 0;
+
+  // Encode start point
+  encoded += encodeCoordinate(startLat, prevLat);
+  encoded += encodeCoordinate(startLng, prevLng);
+  prevLat = startLat;
+  prevLng = startLng;
+
+  // Encode end point
+  encoded += encodeCoordinate(endLat, prevLat);
+  encoded += encodeCoordinate(endLng, prevLng);
+
+  return encoded;
+}
+
 interface CreateRideData {
   origin: string;
   destination: string;
@@ -65,6 +104,8 @@ interface BackendUser {
   rating: number;
   company?: string;
   isVerified: boolean;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
   wallet?: {
     balance: number;
   };
@@ -125,6 +166,8 @@ const transformUser = (backendUser: BackendUser, role: UserRole = UserRole.PASSE
     rating: backendUser.rating,
     company: backendUser.company,
     isVerified: backendUser.isVerified,
+    isEmailVerified: backendUser.isEmailVerified,
+    isPhoneVerified: backendUser.isPhoneVerified,
   };
 };
 
@@ -396,6 +439,21 @@ class BackendService {
     }
   }
 
+  /**
+   * Delete user account
+   */
+  async deleteAccount(): Promise<void> {
+    try {
+      await apiService.delete(API_ENDPOINTS.AUTH.DELETE_ACCOUNT);
+
+      // Clear local data
+      await this.logout();
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      throw new Error(error.message || 'Failed to delete account');
+    }
+  }
+
   // ============================================
   // PASSWORD-BASED AUTHENTICATION
   // ============================================
@@ -468,6 +526,51 @@ class BackendService {
     } catch (error: any) {
       console.error('Google login error:', error);
       throw new Error(error.message || 'Google login failed');
+    }
+  }
+
+  // ============================================
+  // EMAIL VERIFICATION
+  // ============================================
+
+  /**
+   * Send email verification OTP
+   */
+  async sendEmailVerification(email: string): Promise<{ message: string }> {
+    try {
+      const response = await apiService.post<{ message: string }>(
+        API_ENDPOINTS.AUTH.SEND_EMAIL_VERIFICATION,
+        { email }
+      );
+      return response;
+    } catch (error: any) {
+      console.error('Send email verification error:', error);
+      throw new Error(error.message || 'Failed to send verification code');
+    }
+  }
+
+  /**
+   * Verify email with OTP
+   */
+  async verifyEmail(email: string, otp: string): Promise<{ message: string; user: User }> {
+    try {
+      const response = await apiService.post<{ message: string; user: BackendUser }>(
+        API_ENDPOINTS.AUTH.VERIFY_EMAIL,
+        { email, otp }
+      );
+
+      // Update cached user with verified email
+      if (this.currentUser) {
+        this.currentUser = transformUser(response.user, this.currentUser.role);
+      }
+
+      return {
+        message: response.message,
+        user: this.currentUser!
+      };
+    } catch (error: any) {
+      console.error('Verify email error:', error);
+      throw new Error(error.message || 'Failed to verify email');
     }
   }
 
@@ -553,15 +656,24 @@ class BackendService {
       // Create the ride with backend format
       const departureTime = new Date(`${ride.date}T${ride.time}:00`);
 
+      // Use default Bangalore coordinates (will be replaced with geocoding later)
+      const startLat = 12.9716;
+      const startLng = 77.5946;
+      const endLat = 12.9716;
+      const endLng = 77.5946;
+
+      // Generate a valid encoded polyline
+      const polyline = encodeSimplePolyline(startLat, startLng, endLat, endLng);
+
       const backendRide = await apiService.post<BackendRide>(API_ENDPOINTS.RIDES.BASE, {
         vehicleId,
-        startLat: 12.9716, // Default coordinates - in production, geocode the origin
-        startLng: 77.5946,
+        startLat,
+        startLng,
         startAddress: ride.origin,
-        endLat: 12.9716, // Default coordinates - in production, geocode the destination
-        endLng: 77.5946,
+        endLat,
+        endLng,
         endAddress: ride.destination,
-        polyline: 'dummy_polyline', // In production, get actual route polyline
+        polyline,
         departureTime: departureTime.toISOString(),
         availableSeats: ride.seatsAvailable,
         pricePerSeat: ride.price,

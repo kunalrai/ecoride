@@ -41,9 +41,11 @@ export default function App() {
     handleNavigate('details');
   };
 
-  const handleUpdateUser = async (updatedUser: User) => {
+  const handleUpdateUser = async (updatedUser: User, skipApiCall = false) => {
     try {
-      await backend.updateProfile(updatedUser);
+      if (!skipApiCall) {
+        await backend.updateProfile(updatedUser);
+      }
       setUser(updatedUser);
     } catch (error) {
       console.error('Failed to update user:', error);
@@ -67,7 +69,7 @@ export default function App() {
       {currentPage === 'offer' && <OfferRide onNavigate={handleNavigate} />}
       {currentPage === 'details' && selectedRide && <RideDetails ride={selectedRide} onBack={() => handleNavigate('find')} />}
       {currentPage === 'dashboard' && <Dashboard user={user} onNavigate={handleNavigate} />}
-      {currentPage === 'profile' && <Profile user={user} onNavigate={handleNavigate} onUpdateUser={handleUpdateUser} />}
+      {currentPage === 'profile' && <Profile user={user} onNavigate={handleNavigate} onUpdateUser={handleUpdateUser} onLogout={handleLogout} />}
     </Layout>
   );
 }

@@ -463,4 +463,107 @@ router.post(
   authController.loginWithGoogle
 );
 
+// ============================================
+// ACCOUNT MANAGEMENT ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/auth/account:
+ *   delete:
+ *     summary: Delete user account
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete('/account', authenticate, authController.deleteAccount);
+
+// ============================================
+// EMAIL VERIFICATION ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/auth/send-email-verification:
+ *   post:
+ *     summary: Send verification code to email
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "user@example.com"
+ *     responses:
+ *       200:
+ *         description: Verification code sent successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+  '/send-email-verification',
+  authenticate,
+  validate([
+    body('email').isEmail().withMessage('Invalid email address'),
+  ]),
+  authController.sendEmailVerification
+);
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify email with OTP code
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "user@example.com"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired verification code
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+  '/verify-email',
+  authenticate,
+  validate([
+    body('email').isEmail().withMessage('Invalid email address'),
+    body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+  ]),
+  authController.verifyEmail
+);
+
 export default router;
