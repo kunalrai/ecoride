@@ -319,4 +319,148 @@ router.put('/vehicles/:vehicleId', authenticate, authController.updateVehicle);
 
 router.delete('/vehicles/:vehicleId', authenticate, authController.deleteVehicle);
 
+// ============================================
+// PASSWORD-BASED AUTHENTICATION ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/auth/signup-password:
+ *   post:
+ *     summary: Signup with email and password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "user@example.com"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "password123"
+ *               name:
+ *                 type: string
+ *                 example: "John Doe"
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ */
+router.post(
+  '/signup-password',
+  validate([
+    body('email').isEmail().withMessage('Invalid email address'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('name').notEmpty().withMessage('Name is required'),
+  ]),
+  authController.signupWithPassword
+);
+
+/**
+ * @swagger
+ * /api/auth/login-password:
+ *   post:
+ *     summary: Login with email and password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "user@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "password123"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ */
+router.post(
+  '/login-password',
+  validate([
+    body('email').isEmail().withMessage('Invalid email address'),
+    body('password').notEmpty().withMessage('Password is required'),
+  ]),
+  authController.loginWithPassword
+);
+
+// ============================================
+// GOOGLE OAUTH AUTHENTICATION ROUTES
+// ============================================
+
+/**
+ * @swagger
+ * /api/auth/google:
+ *   post:
+ *     summary: Login/Signup with Google OAuth
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idToken
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Google ID token from client
+ *                 example: "eyJhbGciOiJSUzI1NiIsImtpZCI6..."
+ *     responses:
+ *       200:
+ *         description: Authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ */
+router.post(
+  '/google',
+  validate([
+    body('idToken').notEmpty().withMessage('Google ID token is required'),
+  ]),
+  authController.loginWithGoogle
+);
+
 export default router;

@@ -191,11 +191,12 @@ class BackendService {
    */
   async searchPlaces(query: string): Promise<string[]> {
     try {
-      const response = await apiService.post<{ places: string[] }>(
+      const response = await apiService.post<{ places: Array<{ description: string; placeId: string }> }>(
         API_ENDPOINTS.LOCATION.BASE + '/search',
         { query }
       );
-      return response.places;
+      // Extract just the descriptions for the simple autocomplete
+      return response.places.map(place => place.description);
     } catch (error) {
       console.error('Search places error:', error);
       return [];
@@ -392,6 +393,81 @@ class BackendService {
     } catch (error: any) {
       console.error('Update profile error:', error);
       throw new Error(error.message || 'Failed to update profile');
+    }
+  }
+
+  // ============================================
+  // PASSWORD-BASED AUTHENTICATION
+  // ============================================
+
+  /**
+   * Signup with email and password
+   */
+  async signupWithPassword(email: string, password: string, name: string): Promise<User> {
+    try {
+      const response = await apiService.post<{ token: string; user: BackendUser }>(
+        API_ENDPOINTS.AUTH.SIGNUP_PASSWORD,
+        { email, password, name }
+      );
+
+      // Store token
+      tokenManager.set(response.token);
+
+      // Transform and cache user
+      this.currentUser = transformUser(response.user);
+      return this.currentUser;
+    } catch (error: any) {
+      console.error('Password signup error:', error);
+      throw new Error(error.message || 'Signup failed');
+    }
+  }
+
+  /**
+   * Login with email and password
+   */
+  async loginWithPassword(email: string, password: string): Promise<User> {
+    try {
+      const response = await apiService.post<{ token: string; user: BackendUser }>(
+        API_ENDPOINTS.AUTH.LOGIN_PASSWORD,
+        { email, password }
+      );
+
+      // Store token
+      tokenManager.set(response.token);
+
+      // Transform and cache user
+      this.currentUser = transformUser(response.user);
+      return this.currentUser;
+    } catch (error: any) {
+      console.error('Password login error:', error);
+      throw new Error(error.message || 'Login failed');
+    }
+  }
+
+  // ============================================
+  // GOOGLE OAUTH AUTHENTICATION
+  // ============================================
+
+  /**
+   * Login with Google OAuth
+   * @param idToken - Google ID token obtained from Google Sign-In
+   */
+  async loginWithGoogle(idToken: string): Promise<User> {
+    try {
+      const response = await apiService.post<{ token: string; user: BackendUser }>(
+        API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
+        { idToken }
+      );
+
+      // Store token
+      tokenManager.set(response.token);
+
+      // Transform and cache user
+      this.currentUser = transformUser(response.user);
+      return this.currentUser;
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      throw new Error(error.message || 'Google login failed');
     }
   }
 

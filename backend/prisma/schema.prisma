@@ -11,8 +11,10 @@ model User {
   id                       String         @id @default(uuid())
   name                     String
   email                    String?        @unique
-  phone                    String         @unique
+  phone                    String?        @unique
   password                 String?
+  googleId                 String?        @unique
+  authProvider             AuthProvider   @default(PHONE)
   profilePicture           String?
   company                  String?
   isVerified               Boolean        @default(false)
@@ -40,6 +42,7 @@ model User {
   @@index([phone])
   @@index([email])
   @@index([company])
+  @@index([googleId])
 }
 
 model Vehicle {
@@ -325,4 +328,10 @@ enum MessageType {
   IMAGE
   LOCATION
   SYSTEM
+}
+
+enum AuthProvider {
+  PHONE
+  EMAIL
+  GOOGLE
 }

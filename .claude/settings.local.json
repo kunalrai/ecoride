@@ -11,7 +11,12 @@
       "Bash(curl:*)",
       "Bash(npm run dev:*)",
       "Bash(echo:*)",
-      "Bash(timeout 5 bash -c \"while ! curl -s http://localhost:5000/health > /dev/null; do sleep 1; done; echo ''Backend is ready''\")"
+      "Bash(timeout 5 bash -c \"while ! curl -s http://localhost:5000/health > /dev/null; do sleep 1; done; echo ''Backend is ready''\")",
+      "Bash(if [ -f \"backend/.env\" ])",
+      "Bash(then grep -E \"GOOGLE_MAPS_API_KEY\" backend/.env)",
+      "Bash(else echo \"backend/.env file does not exist\")",
+      "Bash(fi)",
+      "Bash(npx create-expo-app:*)"
     ],
     "deny": [],
     "ask": []

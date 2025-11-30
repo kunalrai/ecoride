@@ -98,3 +98,41 @@ export const deleteVehicle = async (req: AuthRequest, res: Response): Promise<vo
     res.status(400).json({ error: error.message });
   }
 };
+
+// ============================================
+// PASSWORD-BASED AUTHENTICATION
+// ============================================
+
+export const signupWithPassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { email, password, name } = req.body;
+    const result = await authService.signupWithPassword(email, password, name);
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const loginWithPassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    const result = await authService.loginWithPassword(email, password);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// ============================================
+// GOOGLE OAUTH AUTHENTICATION
+// ============================================
+
+export const loginWithGoogle = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { idToken } = req.body;
+    const result = await authService.loginWithGoogle(idToken);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
