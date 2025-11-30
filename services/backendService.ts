@@ -371,6 +371,31 @@ class BackendService {
   }
 
   /**
+   * Update user profile
+   */
+  async updateProfile(updatedUser: User): Promise<User> {
+    try {
+      const updateData = {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        company: updatedUser.company,
+      };
+
+      const backendUser = await apiService.put<BackendUser>(
+        API_ENDPOINTS.AUTH.UPDATE_PROFILE,
+        updateData
+      );
+
+      // Update cached user
+      this.currentUser = transformUser(backendUser, updatedUser.role);
+      return this.currentUser;
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      throw new Error(error.message || 'Failed to update profile');
+    }
+  }
+
+  /**
    * Search for rides
    */
   async searchRides(origin?: string, destination?: string): Promise<Ride[]> {

@@ -70,7 +70,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onNavigate, curr
                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
                      <div className="text-xs text-gray-500">{user.company || 'Verified User'}</div>
                  </div>
-                 <img className="h-9 w-9 rounded-full border border-gray-200 bg-gray-100 cursor-pointer" src={user.avatarUrl} alt="" onClick={() => onNavigate('dashboard')} />
+                 <img className="h-9 w-9 rounded-full border border-gray-200 bg-gray-100 cursor-pointer hover:ring-2 hover:ring-green-500 transition-all" src={user.avatarUrl} alt="" onClick={() => onNavigate('profile')} title="View Profile" />
                  <Button variant="outline" size="sm" onClick={onLogout} className="ml-2 text-xs py-1 h-8 px-2 border-0 text-red-500 hover:bg-red-50 hover:text-red-600">
                     <LogOut className="h-4 w-4" />
                  </Button>
@@ -96,9 +96,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onNavigate, curr
               <NavItem page="find" icon={Search} label="Find a Ride" />
               <NavItem page="offer" icon={PlusCircle} label="Offer a Ride" />
               <NavItem page="dashboard" icon={LayoutDashboard} label="My Rides & Wallet" />
+              <NavItem page="profile" icon={UserIcon} label="Profile" />
             </div>
             <div className="pt-4 pb-4 border-t border-gray-200">
-              <div className="flex items-center px-4">
+              <div className="flex items-center px-4 cursor-pointer hover:bg-gray-50 py-2 rounded-lg mx-2 transition-colors" onClick={() => { onNavigate('profile'); setIsMobileMenuOpen(false); }}>
                 <div className="flex-shrink-0">
                   <img className="h-10 w-10 rounded-full bg-gray-100" src={user.avatarUrl} alt="" />
                 </div>

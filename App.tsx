@@ -7,6 +7,7 @@ import { OfferRide } from './pages/OfferRide';
 import { RideDetails } from './pages/RideDetails';
 import { Dashboard } from './pages/Dashboard';
 import { Auth } from './pages/Auth';
+import { Profile } from './pages/Profile';
 import { backend } from './services/backendService';
 import { User, Ride, UserRole } from './types';
 
@@ -40,14 +41,24 @@ export default function App() {
     handleNavigate('details');
   };
 
+  const handleUpdateUser = async (updatedUser: User) => {
+    try {
+      await backend.updateProfile(updatedUser);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+    }
+  };
+
   if (!user) {
     return <Auth onLogin={handleLogin} />;
   }
 
   return (
-    <Layout 
-      user={user} 
-      onNavigate={handleNavigate} 
+    <Layout
+      user={user}
+      onNavigate={handleNavigate}
       currentPage={currentPage}
       onLogout={handleLogout}
     >
@@ -56,6 +67,7 @@ export default function App() {
       {currentPage === 'offer' && <OfferRide onNavigate={handleNavigate} />}
       {currentPage === 'details' && selectedRide && <RideDetails ride={selectedRide} onBack={() => handleNavigate('find')} />}
       {currentPage === 'dashboard' && <Dashboard user={user} onNavigate={handleNavigate} />}
+      {currentPage === 'profile' && <Profile user={user} onNavigate={handleNavigate} onUpdateUser={handleUpdateUser} />}
     </Layout>
   );
 }
