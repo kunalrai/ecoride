@@ -266,6 +266,38 @@ class BackendService {
   // ============================================
 
   /**
+   * Signup with phone and name
+   */
+  async signup(phone: string, name: string, otp?: string): Promise<User> {
+    try {
+      // Step 1: Request OTP (if not provided)
+      if (!otp) {
+        await apiService.post(API_ENDPOINTS.AUTH.SIGNUP, { phone, name });
+        throw new Error('OTP_REQUIRED'); // Signal that OTP was sent
+      }
+
+      // Step 2: Verify OTP and complete signup
+      const response = await apiService.post<{ token: string; user: BackendUser }>(
+        API_ENDPOINTS.AUTH.VERIFY_SIGNUP,
+        { phone, name, otp }
+      );
+
+      // Store token
+      tokenManager.set(response.token);
+
+      // Transform and cache user
+      this.currentUser = transformUser(response.user);
+      return this.currentUser;
+    } catch (error: any) {
+      if (error.message === 'OTP_REQUIRED') {
+        throw error;
+      }
+      console.error('Signup error:', error);
+      throw new Error(error.message || 'Signup failed');
+    }
+  }
+
+  /**
    * Login with phone and OTP
    */
   async login(phone: string, otp?: string): Promise<User> {

@@ -1,9 +1,8 @@
-import bcrypt from 'bcryptjs';
 import { prisma } from '../config/database';
 import { generateToken } from '../utils/jwt';
 import { sendPhoneOTP, verifyOTP } from './otpService';
 
-export const signupWithPhone = async (phone: string, name: string): Promise<void> => {
+export const signupWithPhone = async (phone: string, _name: string): Promise<void> => {
   const existingUser = await prisma.user.findUnique({
     where: { phone },
   });

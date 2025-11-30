@@ -1,8 +1,7 @@
 import { Request } from 'express';
-import { Document, Types } from 'mongoose';
 
-export interface IUser extends Document {
-  _id: Types.ObjectId;
+export interface IUser {
+  id: string;
   name: string;
   email?: string;
   phone: string;
@@ -21,8 +20,8 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
-export interface IVehicle extends Document {
-  userId: Types.ObjectId;
+export interface IVehicle {
+  userId: string;
   vehicleType: 'car' | 'bike';
   make: string;
   model: string;
@@ -62,9 +61,9 @@ export enum RecurrenceType {
   CUSTOM = 'CUSTOM'
 }
 
-export interface IRide extends Document {
-  driverId: Types.ObjectId;
-  vehicleId: Types.ObjectId;
+export interface IRide {
+  driverId: string;
+  vehicleId: string;
   startLocation: ILocation;
   endLocation: ILocation;
   waypoints: IWaypoint[];
@@ -97,9 +96,9 @@ export enum BookingStatus {
   COMPLETED = 'COMPLETED'
 }
 
-export interface IBooking extends Document {
-  rideId: Types.ObjectId;
-  passengerId: Types.ObjectId;
+export interface IBooking {
+  rideId: string;
+  passengerId: string;
   seatsBooked: number;
   pickupLocation: ILocation;
   dropLocation: ILocation;
@@ -132,18 +131,18 @@ export enum TransactionCategory {
   REFUND = 'REFUND'
 }
 
-export interface IWallet extends Document {
-  userId: Types.ObjectId;
+export interface IWallet {
+  userId: string;
   balance: number;
   points: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface ITransaction extends Document {
-  userId: Types.ObjectId;
-  walletId: Types.ObjectId;
-  bookingId?: Types.ObjectId;
+export interface ITransaction {
+  userId: string;
+  walletId: string;
+  bookingId?: string;
   type: TransactionType;
   category: TransactionCategory;
   amount: number;
@@ -157,7 +156,7 @@ export interface ITransaction extends Document {
   createdAt: Date;
 }
 
-export interface IOTP extends Document {
+export interface IOTP {
   identifier: string; // phone or email
   otp: string;
   type: 'phone' | 'email';
@@ -166,8 +165,8 @@ export interface IOTP extends Document {
   createdAt: Date;
 }
 
-export interface INotification extends Document {
-  userId: Types.ObjectId;
+export interface INotification {
+  userId: string;
   title: string;
   body: string;
   type: 'ride_matched' | 'booking_request' | 'booking_accepted' | 'booking_rejected' | 'ride_reminder' | 'payment' | 'other';
@@ -176,10 +175,10 @@ export interface INotification extends Document {
   createdAt: Date;
 }
 
-export interface IRating extends Document {
-  bookingId: Types.ObjectId;
-  fromUserId: Types.ObjectId;
-  toUserId: Types.ObjectId;
+export interface IRating {
+  bookingId: string;
+  fromUserId: string;
+  toUserId: string;
   rating: number;
   review?: string;
   createdAt: Date;

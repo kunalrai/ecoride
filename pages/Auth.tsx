@@ -10,34 +10,80 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
-  const [step, setStep] = useState<'phone' | 'otp' | 'profile'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'name'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
+  const [name, setName] = useState('');
+  const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phone.length < 10) {
         alert("Please enter a valid 10-digit mobile number");
         return;
     }
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-        setLoading(false);
+    try {
+        // Try login first - if user doesn't exist, ask for name
+        await backend.login(phone);
+        setIsNewUser(false);
         setStep('otp');
-    }, 1000);
+    } catch (error: any) {
+        if (error.message === 'OTP_REQUIRED') {
+            // User exists - OTP sent successfully
+            setIsNewUser(false);
+            setStep('otp');
+        } else if (error.message === 'User not found') {
+            // New user - need to collect name first
+            setIsNewUser(true);
+            setStep('name');
+        } else {
+            alert(error.message || "Failed to send OTP");
+        }
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const handleSendSignupOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+        alert("Please enter your name");
+        return;
+    }
+    setLoading(true);
+    try {
+        // Send signup OTP with name
+        await backend.signup(phone, name);
+        setStep('otp');
+    } catch (error: any) {
+        if (error.message === 'OTP_REQUIRED') {
+            // Expected - OTP was sent successfully
+            setStep('otp');
+        } else {
+            alert(error.message || "Failed to send OTP");
+        }
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (otp.length !== 6) {
+        alert("Please enter a valid 6-digit OTP");
+        return;
+    }
     setLoading(true);
     try {
-        // Simulate verify
-        const user = await backend.login(phone);
+        // Verify OTP and login/signup
+        const user = isNewUser
+            ? await backend.signup(phone, name, otp)
+            : await backend.login(phone, otp);
         onLogin(user);
-    } catch (e) {
-        alert("Login failed");
+    } catch (error: any) {
+        alert(error.message || "Verification failed");
     } finally {
         setLoading(false);
     }
@@ -53,7 +99,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                <h1 className="text-2xl font-bold text-white">EcoRide</h1>
                <p className="text-green-100 text-sm mt-1">India's Trusted Corporate Carpool</p>
            </div>
-           
+
            <div className="p-8">
                {step === 'phone' && (
                    <form onSubmit={handleSendOtp} className="space-y-6">
@@ -61,7 +107,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                            <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
                            <p className="text-gray-500 text-sm mt-1">Enter your mobile number to continue</p>
                        </div>
-                       
+
                        <div className="relative">
                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                <Smartphone className="h-5 w-5 text-gray-400" />
@@ -69,7 +115,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                            <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
                                <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
                            </div>
-                           <input 
+                           <input
                                type="tel"
                                className="block w-full pl-24 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500"
                                placeholder="99999 99999"
@@ -90,29 +136,59 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                    </form>
                )}
 
+               {step === 'name' && (
+                   <form onSubmit={handleSendSignupOtp} className="space-y-6">
+                       <div className="text-center">
+                           <h2 className="text-xl font-semibold text-gray-900">Welcome to EcoRide!</h2>
+                           <p className="text-gray-500 text-sm mt-1">Please enter your name to continue</p>
+                       </div>
+
+                       <div>
+                           <input
+                               type="text"
+                               className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500"
+                               placeholder="Full Name"
+                               value={name}
+                               onChange={(e) => setName(e.target.value)}
+                               autoFocus
+                           />
+                       </div>
+
+                       <Button type="submit" className="w-full h-12 rounded-xl" isLoading={loading}>
+                           Send OTP <ArrowRight className="ml-2 h-4 w-4" />
+                       </Button>
+
+                       <div className="text-center text-sm">
+                           <button type="button" onClick={() => setStep('phone')} className="text-gray-500 hover:text-gray-700">
+                               ← Back to phone number
+                           </button>
+                       </div>
+                   </form>
+               )}
+
                {step === 'otp' && (
                    <form onSubmit={handleVerifyOtp} className="space-y-6">
                        <div className="text-center">
                            <h2 className="text-xl font-semibold text-gray-900">Verify OTP</h2>
                            <p className="text-gray-500 text-sm mt-1">Sent to +91 {phone} <button type='button' onClick={() => setStep('phone')} className="text-green-600 font-medium">Edit</button></p>
                        </div>
-                       
+
                        <div className="flex justify-center gap-2">
-                           <input 
+                           <input
                                type="text"
                                className="block w-full text-center py-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 tracking-widest text-2xl font-bold"
-                               placeholder="1234"
-                               maxLength={4}
+                               placeholder="123456"
+                               maxLength={6}
                                value={otp}
-                               onChange={(e) => setOtp(e.target.value)}
+                               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                                autoFocus
                            />
                        </div>
 
                        <Button type="submit" className="w-full h-12 rounded-xl" isLoading={loading}>
-                           Verify & Login
+                           Verify & {isNewUser ? 'Sign Up' : 'Login'}
                        </Button>
-                       
+
                        <div className="text-center text-sm">
                            <span className="text-gray-500">Didn't receive code? </span>
                            <button type="button" className="text-green-600 font-medium hover:underline">Resend</button>

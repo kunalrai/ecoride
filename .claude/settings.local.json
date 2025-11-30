@@ -10,7 +10,8 @@
       "Bash(test:*)",
       "Bash(curl:*)",
       "Bash(npm run dev:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(timeout 5 bash -c \"while ! curl -s http://localhost:5000/health > /dev/null; do sleep 1; done; echo ''Backend is ready''\")"
     ],
     "deny": [],
     "ask": []

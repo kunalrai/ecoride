@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import ngeohash from 'ngeohash';
 
 export const encodeGeohash = (lat: number, lng: number, precision: number = 7): string => {
@@ -17,7 +19,7 @@ export const generateGeohashesForRoute = (
     geohashes.add(hash);
 
     const neighbors = ngeohash.neighbors(hash);
-    Object.values(neighbors).forEach(neighbor => geohashes.add(neighbor));
+    Object.values(neighbors).forEach(neighbor => geohashes.add(neighbor as string));
   }
 
   return Array.from(geohashes);
@@ -72,7 +74,7 @@ export const getGeohashesInRadius = (
   geohashes.add(centerHash);
 
   const neighbors = ngeohash.neighbors(centerHash);
-  Object.values(neighbors).forEach(neighbor => geohashes.add(neighbor));
+  Object.values(neighbors).forEach(neighbor => geohashes.add(neighbor as string));
 
   return Array.from(geohashes);
 };
