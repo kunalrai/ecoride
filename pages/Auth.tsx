@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { backend } from '../services/backendService';
 import { User } from '../types';
@@ -16,6 +16,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Cooldown timer for resend
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +34,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
     setLoading(true);
     try {
+        // Add +91 country code for Indian numbers
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
         // Try login first - if user doesn't exist, ask for name
-        await backend.login(phone);
+        await backend.login(formattedPhone);
         setIsNewUser(false);
         setStep('otp');
     } catch (error: any) {
@@ -34,6 +45,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             // User exists - OTP sent successfully
             setIsNewUser(false);
             setStep('otp');
+            setResendCooldown(30); // 30 second cooldown
         } else if (error.message === 'User not found') {
             // New user - need to collect name first
             setIsNewUser(true);
@@ -54,15 +66,47 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
     setLoading(true);
     try {
+        // Add +91 country code for Indian numbers
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
         // Send signup OTP with name
-        await backend.signup(phone, name);
+        await backend.signup(formattedPhone, name);
         setStep('otp');
     } catch (error: any) {
         if (error.message === 'OTP_REQUIRED') {
             // Expected - OTP was sent successfully
             setStep('otp');
+            setResendCooldown(30); // 30 second cooldown
         } else {
             alert(error.message || "Failed to send OTP");
+        }
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+
+    setLoading(true);
+    try {
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+
+        if (isNewUser) {
+            // Resend signup OTP
+            await backend.signup(formattedPhone, name);
+        } else {
+            // Resend login OTP
+            await backend.login(formattedPhone);
+        }
+
+        setResendCooldown(30); // Reset cooldown
+        alert('OTP sent successfully!');
+    } catch (error: any) {
+        if (error.message !== 'OTP_REQUIRED') {
+            alert(error.message || "Failed to resend OTP");
+        } else {
+            setResendCooldown(30);
+            alert('OTP sent successfully!');
         }
     } finally {
         setLoading(false);
@@ -77,10 +121,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
     setLoading(true);
     try {
+        // Add +91 country code for Indian numbers
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
         // Verify OTP and login/signup
         const user = isNewUser
-            ? await backend.signup(phone, name, otp)
-            : await backend.login(phone, otp);
+            ? await backend.signup(formattedPhone, name, otp)
+            : await backend.login(formattedPhone, otp);
         onLogin(user);
     } catch (error: any) {
         alert(error.message || "Verification failed");
@@ -191,7 +237,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
                        <div className="text-center text-sm">
                            <span className="text-gray-500">Didn't receive code? </span>
-                           <button type="button" className="text-green-600 font-medium hover:underline">Resend</button>
+                           <button
+                               type="button"
+                               onClick={handleResendOtp}
+                               disabled={resendCooldown > 0 || loading}
+                               className={`font-medium ${resendCooldown > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:underline'}`}
+                           >
+                               {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend'}
+                           </button>
                        </div>
                    </form>
                )}

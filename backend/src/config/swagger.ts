@@ -17,12 +17,10 @@ const swaggerDefinition: SwaggerDefinition = {
   },
   servers: [
     {
-      url: 'http://localhost:5000',
-      description: 'Development server',
-    },
-    {
-      url: 'https://api.ecoride.com',
-      description: 'Production server',
+      url: process.env.NODE_ENV === 'production'
+        ? (process.env.API_URL || 'https://ecoride-backend-service.onrender.com')
+        : 'http://localhost:5000',
+      description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
     },
   ],
   components: {

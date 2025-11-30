@@ -51,7 +51,7 @@ const router = Router();
 router.post(
   '/signup',
   validate([
-    body('phone').isMobilePhone('any').withMessage('Invalid phone number'),
+    body('phone').matches(/^\+\d{10,15}$/).withMessage('Invalid phone number format. Use format: +919999999999'),
     body('name').notEmpty().withMessage('Name is required'),
   ]),
   authController.signup
@@ -99,7 +99,7 @@ router.post(
 router.post(
   '/verify-signup',
   validate([
-    body('phone').isMobilePhone('any').withMessage('Invalid phone number'),
+    body('phone').matches(/^\+\d{10,15}$/).withMessage('Invalid phone number format. Use format: +919999999999'),
     body('name').notEmpty().withMessage('Name is required'),
     body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
   ]),
@@ -131,7 +131,7 @@ router.post(
 router.post(
   '/login',
   validate([
-    body('phone').isMobilePhone('any').withMessage('Invalid phone number'),
+    body('phone').matches(/^\+\d{10,15}$/).withMessage('Invalid phone number format. Use format: +919999999999'),
   ]),
   authController.login
 );
@@ -174,7 +174,7 @@ router.post(
 router.post(
   '/verify-login',
   validate([
-    body('phone').isMobilePhone('any').withMessage('Invalid phone number'),
+    body('phone').matches(/^\+\d{10,15}$/).withMessage('Invalid phone number format. Use format: +919999999999'),
     body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
   ]),
   authController.verifyLogin
