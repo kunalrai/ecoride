@@ -641,6 +641,7 @@ class BackendService {
       if (vehicles.length === 0) {
         // Create a default vehicle
         const newVehicle = await apiService.post<any>(API_ENDPOINTS.AUTH.VEHICLES, {
+          vehicleType: 'CAR', // Required field - default to CAR
           make: ride.vehicleModel?.split(' ')[0] || 'Honda',
           model: ride.vehicleModel?.split(' ')[1] || 'City',
           year: 2020,
