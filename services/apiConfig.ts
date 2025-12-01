@@ -58,8 +58,11 @@ export const API_ENDPOINTS = {
   // Wallet
   WALLET: {
     BASE: `${API_BASE_URL}/api/wallet`,
+    CREATE_ORDER: `${API_BASE_URL}/api/wallet/create-order`,
+    VERIFY_PAYMENT: `${API_BASE_URL}/api/wallet/verify-payment`,
     LOAD: `${API_BASE_URL}/api/wallet/load`,
     TRANSACTIONS: `${API_BASE_URL}/api/wallet/transactions`,
+    REDEEM: `${API_BASE_URL}/api/wallet/redeem`,
   },
 
   // Notifications

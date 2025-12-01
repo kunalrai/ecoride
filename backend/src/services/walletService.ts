@@ -26,17 +26,27 @@ export const createRazorpayOrder = async (
   userId: string,
   amount: number
 ): Promise<any> => {
-  const order = await razorpay.orders.create({
-    amount: Math.round(amount * 100),
-    currency: 'INR',
-    receipt: `wallet_load_${userId}_${Date.now()}`,
-    notes: {
-      userId,
-      type: 'wallet_load',
-    },
-  });
+  try {
+    // Generate a short receipt ID (max 40 chars for Razorpay)
+    const timestamp = Date.now().toString().slice(-8);
+    const shortUserId = userId.slice(0, 8);
+    const receipt = `wl_${shortUserId}_${timestamp}`;
 
-  return order;
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100),
+      currency: 'INR',
+      receipt,
+      notes: {
+        userId,
+        type: 'wallet_load',
+      },
+    });
+
+    return order;
+  } catch (error: any) {
+    console.error('Razorpay order creation error:', error);
+    throw new Error(error.error?.description || error.message || 'Failed to create Razorpay order');
+  }
 };
 
 export const verifyRazorpayPayment = async (

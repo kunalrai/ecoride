@@ -750,6 +750,105 @@ class BackendService {
       return [];
     }
   }
+
+  // ============================================
+  // WALLET SERVICES
+  // ============================================
+
+  /**
+   * Get user's wallet information
+   */
+  async getWallet(): Promise<{ balance: number; points: number }> {
+    try {
+      const response = await apiService.get<{ balance: number; points: number }>(
+        API_ENDPOINTS.WALLET.BASE
+      );
+      return response;
+    } catch (error: any) {
+      console.error('Get wallet error:', error);
+      throw new Error(error.message || 'Failed to fetch wallet');
+    }
+  }
+
+  /**
+   * Create Razorpay order for wallet loading
+   */
+  async createWalletOrder(amount: number): Promise<any> {
+    try {
+      const response = await apiService.post<any>(
+        API_ENDPOINTS.WALLET.CREATE_ORDER,
+        { amount }
+      );
+      return response;
+    } catch (error: any) {
+      console.error('Create order error:', error);
+      throw new Error(error.message || 'Failed to create order');
+    }
+  }
+
+  /**
+   * Verify payment and load wallet
+   */
+  async verifyAndLoadWallet(
+    amount: number,
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    razorpaySignature: string
+  ): Promise<any> {
+    try {
+      const response = await apiService.post<any>(
+        API_ENDPOINTS.WALLET.VERIFY_PAYMENT,
+        { amount, razorpayOrderId, razorpayPaymentId, razorpaySignature }
+      );
+
+      // Update current user's wallet balance if successful
+      if (this.currentUser && response.wallet) {
+        this.currentUser.walletBalance = response.wallet.balance;
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('Verify payment error:', error);
+      throw new Error(error.message || 'Failed to verify payment');
+    }
+  }
+
+  /**
+   * Get transaction history
+   */
+  async getTransactionHistory(limit: number = 50, offset: number = 0): Promise<any[]> {
+    try {
+      const response = await apiService.get<any[]>(
+        `${API_ENDPOINTS.WALLET.TRANSACTIONS}?limit=${limit}&offset=${offset}`
+      );
+      return response;
+    } catch (error: any) {
+      console.error('Get transaction history error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Redeem points
+   */
+  async redeemPoints(points: number, rewardType: string): Promise<any> {
+    try {
+      const response = await apiService.post<any>(
+        API_ENDPOINTS.WALLET.REDEEM,
+        { points, rewardType }
+      );
+
+      // Update current user's wallet balance if successful
+      if (this.currentUser && response.wallet) {
+        this.currentUser.walletBalance = response.wallet.balance;
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('Redeem points error:', error);
+      throw new Error(error.message || 'Failed to redeem points');
+    }
+  }
 }
 
 export const backend = new BackendService();
