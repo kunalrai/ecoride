@@ -12,10 +12,11 @@ const startServer = async () => {
     await connectDatabase();
 
     app.listen(PORT, () => {
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`Health check: http://localhost:${PORT}/health`);
-      logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
+      logger.info(`Health check: ${baseUrl}/health`);
+      logger.info(`API Documentation: ${baseUrl}/api-docs`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
